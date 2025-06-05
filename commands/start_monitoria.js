@@ -25,7 +25,7 @@ module.exports = {
 			return interaction.editReply({ content: '❌ Este comando só pode ser usado em um servidor.', ephemeral: true });
 		}
 
-		if (!interaction.member.roles.cache.some(role => role.name.toLowerCase().includes("monitor"))) {
+		if (!interaction.member.roles.cache.some(role => role.name.toLowerCase() === 'monitor ' + materia)) {
 			return interaction.editReply({ content: '❌ Você não tem permissão para usar este comando.', ephemeral: true });
 		}
 

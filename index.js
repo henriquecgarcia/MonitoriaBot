@@ -47,11 +47,6 @@ client.once('ready', () => {
 
 });
 
-const moduleFiles = fs.readdirSync('./modules').filter(file => file.endsWith('.js'));
-for (const file of moduleFiles) {
-	require(`./modules/${file}`);
-}
-
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (!interaction.isCommand()) return;
 	if (!interaction.guild) {

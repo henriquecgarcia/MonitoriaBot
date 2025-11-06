@@ -159,36 +159,49 @@ export default [
 			let ticket_type = getTicketType(guild.id, ticket.ticket_type);
 			if (!ticket_type) ticket_type = getTicketType(guild.id, 'geral');
 			const member = interaction.member;
-			try {
-				if (!await canClaimTicket(guild.id, member, interaction.channel, interaction.client)) {
-					return interaction.editReply({ content: '❌ Você não tem permissão para assumir este ticket.', ephemeral: true });
-				}
-			} catch (err) {
-				switch (err.message) {
-					case 'TICKET_CLAIM_SELF':
-						return interaction.editReply({ content: '❌ Você não pode assumir seu próprio ticket.', ephemeral: true });
-					case 'TICKET_CLAIM_CLAIMED':
-						return interaction.editReply({ content: '❌ Este ticket já está atribuído a outro membro.', ephemeral: true });
-					case 'ERR_NOT_A_TICKET':
-						return interaction.editReply({ content: '❌ Este canal não é um ticket aberto.', ephemeral: true });
-					case 'ERR_INVALID_TICKET_TYPE':
-						return interaction.editReply({ content: '❌ Tipo de ticket inválido.', ephemeral: true });
-					case 'ERR_TICKET_ALREADY_ASSIGNED':
-						return interaction.editReply({ content: '❌ Este ticket já está atribuído a outro membro.', ephemeral: true });
-					case 'ERR_NO_STAFF_ROLES_CONFIGURED':
-						if (!await isStaff(guild, interaction.member)) {
-							return interaction.editReply({ content: '❌ Este ticket não pode ser assumido porque nenhum cargo de staff está configurado no servidor.', ephemeral: true });
-						}
-						break;
-					default:
-						console.error('Erro ao verificar permissão para assumir ticket:', err);
-						return interaction.editReply({ content: '❌ Ocorreu um erro ao tentar assumir o ticket. Tente novamente mais tarde.', ephemeral: true });
+			let can_claim = await isStaff(guild, member);
+			if (!can_claim) {
+				try {
+					let allowed_claim = await canClaimTicket(guild.id, member, interaction.channel, interaction.client);
+					if (!allowed_claim) {
+						return interaction.editReply({ content: '❌ Você não tem permissão para assumir este ticket.', ephemeral: true });
+					}
+					can_claim = true;
+				} catch (err) {
+					switch (err.message) {
+						case 'TICKET_CLAIM_SELF':
+							return interaction.editReply({ content: '❌ Você não pode assumir seu próprio ticket.', ephemeral: true });
+						case 'TICKET_CLAIM_CLAIMED':
+							return interaction.editReply({ content: '❌ Este ticket já está atribuído a outro membro.', ephemeral: true });
+						case 'ERR_NOT_A_TICKET':
+							return interaction.editReply({ content: '❌ Este canal não é um ticket aberto.', ephemeral: true });
+						case 'ERR_INVALID_TICKET_TYPE':
+							return interaction.editReply({ content: '❌ Tipo de ticket inválido.', ephemeral: true });
+						case 'ERR_TICKET_ALREADY_ASSIGNED':
+							return interaction.editReply({ content: '❌ Este ticket já está atribuído a outro membro.', ephemeral: true });
+						case 'ERR_NO_STAFF_ROLES_CONFIGURED':
+							if (!await isStaff(guild, interaction.member)) {
+								return interaction.editReply({ content: '❌ Este ticket não pode ser assumido porque nenhum cargo de staff está configurado no servidor.', ephemeral: true });
+							}
+							break;
+						default:
+							console.error('Erro ao verificar permissão para assumir ticket:', err);
+							return interaction.editReply({ content: '❌ Ocorreu um erro ao tentar assumir o ticket. Tente novamente mais tarde.', ephemeral: true });
+					}
 				}
 			}
 			if (ticket.assigned_id) {
 				return interaction.editReply({ content: '❌ Este ticket já está atribuído a outro membro.', ephemeral: true });
 			}
-			await assignTicket({ channel, assignedTo: member, client });
+			if (!can_claim) {
+				return interaction.editReply({ content: '❌ Você não tem permissão para assumir este ticket.', ephemeral: true });
+			}
+			try {
+				await assignTicket({ channel, assignedTo: member, client });
+			} catch (err) {
+				console.error('Erro ao atribuir ticket:', err);
+				return interaction.editReply({ content: '❌ Ocorreu um erro ao tentar assumir o ticket. Tente novamente mais tarde.', ephemeral: true });
+			}
 
 			// Garante que quem assumiu tenha acesso pleno ao canal
 			await channel.permissionOverwrites.edit(userId, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true });

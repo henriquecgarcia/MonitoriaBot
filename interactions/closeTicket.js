@@ -11,12 +11,12 @@ export default async function handleCloseTicket(interaction, { client }) {
 
 	const staff_perms = await isStaff(guild, member);
 	if (!staff_perms) {
-		return interaction.editReply({ content: '❌ Você não tem permissão para fechar este ticket.', ephemeral: true });
+		return interaction.reply({ content: '❌ Você não tem permissão para fechar este ticket.', ephemeral: true });
 	}
 	const channel = interaction.channel;
 	const ticket = await db.getTicketByChannel(guild.id, channel.id);
 	if (!ticket) {
-		return interaction.editReply({ content: '❌ Ticket não encontrado.', ephemeral: true });
+		return interaction.reply({ content: '❌ Ticket não encontrado.', ephemeral: true });
 	}
 	let ticket_type = getTicketType(guild.id, ticket.ticket_type);
 	if (!ticket_type) ticket_type = getTicketType(guild.id, 'geral');

@@ -34,38 +34,6 @@ async function initDB() {
 	await testPool(db);
 	return db;
 }
-let vrp = null;
-export function getVrpPool( host_override, port_override, user_override, password_override, database_override ) {
-	if (vrp && !host_override && !user_override && !password_override && !database_override)
-		if (testPool(vrp)) return vrp;
-
-	if (vrp) {
-		vrp.end().catch(() => { });
-	}
-
-	if (host_override && user_override && password_override && database_override) {
-		vrp = createPool({
-			host: host_override,
-			port: port_override || 3306,
-			user: user_override,
-			password: password_override,
-			database: database_override,
-			multipleStatements: true
-		});
-		return vrp;
-	}
-
-	vrp = createPool({
-		host: process.env.VRP_DB_HOST,
-		port: process.env.VRP_DB_PORT || 3306,
-		user: process.env.VRP_DB_USER,
-		password: process.env.VRP_DB_PASS,
-		database: process.env.VRP_DB_NAME,
-		multipleStatements: true
-	});
-	return vrp;
-}
-export { vrp };
 
 async function createTables() {
 	const pool = await initDB();
@@ -152,5 +120,4 @@ export default {
 	hasOpenTicket,
 	query,
 	createTables,
-	getVrpPool,
 };

@@ -5,9 +5,23 @@ import db from './services/db.js';
 import fs from 'fs';
 import config from './services/config_handler.js';
 
-const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
+// Resolve and validate bot token early
+const token = process.env.DISCORD_BOT_TOKEN || process.env.TOKEN;
+if (!token) {
+	console.error('Missing Discord bot token. Set DISCORD_BOT_TOKEN or TOKEN in your environment/.env.');
+	process.exit(1);
+}
+
+const rest = new REST({ version: '10' }).setToken(token);
 const client = new Client({
-	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessageTyping, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences],
+	intents: [
+		GatewayIntentBits.Guilds,
+		GatewayIntentBits.GuildMessages,
+		GatewayIntentBits.MessageContent,
+		GatewayIntentBits.GuildMessageTyping,
+		GatewayIntentBits.GuildMembers,
+		GatewayIntentBits.GuildPresences,
+	],
 	allowedMentions: { parse: ['users', 'roles'], repliedUser: false },
 });
 
@@ -101,17 +115,23 @@ for (const file of modules) {
 console.log(`✅ ${modules.length} módulos carregados.`);
 
 // Evento ready
-client.once(Events.ClientReady, () => {
+client.once(Events.ClientReady, async () => {
 	console.log(`✅ Bot conectado como ${client.user.tag}`);
 
-	console.log('✅ Database inicializada e tabelas garantidas.');
+	try {
+		await db.createTables();
+		console.log('✅ Tabelas do banco de dados verificadas/criadas com sucesso.');
+	} catch (e) {
+		console.error(`Erro ao conectar ao banco de dados e criar tabelas: ${e}`);
+	}
 
 	let guilds = client.guilds.cache.map(guild => guild.id);
 	console.log(`✅ Estou em ${guilds.length} servidores!`);
 
 	console.log(`ℹ️  Processando comandos...`);
 	(async () => {
-		await rest.put(Routes.applicationCommands(client.user.id), { body: client.commands.map(command => command.data.toJSON()) })
+		await rest
+			.put(Routes.applicationCommands(client.user.id), { body: client.commands.map(command => command.data.toJSON()) })
 			.then(() => console.log(`✅ Comandos registrados!`))
 			.catch(console.error);
 	})();
@@ -135,8 +155,8 @@ client.on(Events.InteractionCreate, async interaction => {
 		interaction.reply({ content: '❌ Este comando só pode ser usado em servidores.', ephemeral: true });
 		return;
 	}
-	await interaction.deferReply({ ephemeral: true });
-	interaction.editReply({ content: '🔃 Pensando...', ephemeral: true });
+	// await interaction.deferReply({ ephemeral: true });
+	// interaction.editReply({ content: '🔃 Pensando...', ephemeral: true });
 	if (interaction.isButton()) {
 		const interactionHandler = client.interactions.get(interaction.customId);
 		if (interactionHandler) {
@@ -155,6 +175,8 @@ client.on(Events.InteractionCreate, async interaction => {
 			return handleOpenTicket(interaction, { client });
 		}
 	} else if (interaction.isStringSelectMenu()) {
+		await interaction.deferReply({ ephemeral: true });
+		interaction.editReply({ content: '🔃 Pensando...', ephemeral: true });
 		const id = interaction.customId;
 		const interactionHandler = client.interactions.get(id);
 		if (interactionHandler) {
@@ -165,6 +187,9 @@ client.on(Events.InteractionCreate, async interaction => {
 			return await handleTicketTypeSelect(interaction, { client });
 		}
 	} else if (interaction.isCommand()) {
+		await interaction.deferReply({ ephemeral: true });
+		interaction.editReply({ content: '🔃 Pensando...', ephemeral: true });
+
 		const command = client.commands.get(interaction.commandName);
 		if (!command) {
 			console.error(`No command matching ${interaction.commandName} was found.`);
@@ -187,8 +212,7 @@ client.on(Events.InteractionCreate, async interaction => {
 	} else {
 		await interaction.editReply({ content: '❌ Interação desconhecida. Se o problema persistir, contate um administrador.', ephemeral: true });
 	}
-
 });
 
-client.login(process.env.TOKEN);
+client.login(token);
 

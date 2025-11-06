@@ -3,7 +3,6 @@ import { createTicket } from "../services/tickets.js";
 export default async function handleTicketTypeSelect(interaction, { db, client }) {
 	const selected = interaction.values[0]; // valor selecionado
 	const type = selected || 'geral';
-	await interaction.deferReply({ ephemeral: true });
 	interaction.editReply({ content: '🔃 Criando seu ticket, aguarde...' });
 
 	createTicket({ guild: interaction.guild, user: interaction.user, type, client }).then(ch => {

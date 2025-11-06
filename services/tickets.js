@@ -77,10 +77,12 @@ export function getAllTicketTypes() {
 for (const key in ticketTypes) {
 	const t = ticketTypes[key];
 	try {
-		config.Add(config.TYPES.ROLES, t.roleIdConfig, [], { description: `Cargo(s) com acesso ao Ticket ${t.name}` });
+		config.Add(config.TYPES.ROLE, t.roleIdConfig, [], { description: `Cargo(s) com acesso ao Ticket ${t.name}` });
 		config.Add(config.TYPES.CHANNEL, t.logChannelConfig, null, { description: `Canal de logs para Ticket ${t.name}` });
 		config.Add(config.TYPES.CATEGORY, t.categoryConfig, null, { description: `Categoria para criar Ticket ${t.name}` });
-	} catch {}
+	} catch {
+		console.error(`Erro ao registrar config keys para Ticket Type ${key}`);
+	}
 }
 
 function rateLimited(guildId, userId) {

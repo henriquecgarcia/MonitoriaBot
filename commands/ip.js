@@ -1,13 +1,18 @@
-const { SlashCommandBuilder } = require('discord.js');
-const axios = require('axios');
-const os = require('os');
+import { SlashCommandBuilder, PermissionFlagsBits } from 'discord.js';
+import os from 'os';
+import axios from 'axios';
 
-module.exports = {
+export default {
 	data: new SlashCommandBuilder()
 		.setName('meuip')
 		.setDescription('Mostra o IP público e local da máquina do bot'),
 	
 	async execute(interaction) {
+		const member = interaction.member;
+		if (!member.permissions.has(PermissionFlagsBits.Administrator)) {
+			return interaction.reply({ content: '❌ Você não tem permissão para usar este comando.', ephemeral: true });
+		}
+
 		await interaction.editReply({ content: 'Obtendo IP...', ephemeral: true });
 
 		try {

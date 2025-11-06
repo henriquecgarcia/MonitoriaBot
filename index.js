@@ -1,97 +1,191 @@
-require("dotenv").config();
-const { REST, Routes, Events, MessageFlags, Client, GatewayIntentBits } = require('discord.js');
-const fs = require('node:fs');
+import 'dotenv/config';
+import { Client, GatewayIntentBits, Partials, Collection, Events } from 'discord.js';
+import { REST, Routes } from 'discord.js';
+import db from './services/db.js';
+import fs from 'fs';
+import config from './services/config_handler.js';
 
-const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
+const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_BOT_TOKEN);
 const client = new Client({
 	intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.MessageContent, GatewayIntentBits.GuildMessageTyping, GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences],
 	allowedMentions: { parse: ['users', 'roles'], repliedUser: false },
-	presences: [{ name: 'Monitores', type: 'WATCHING' }],
 });
 
-global.client = client;
-global.fs = fs;
-global.rest = rest;
+client.commands = new Collection();
+client.interactions = new Collection();
 
-let commands = [];
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-for (const file of commandFiles) {
-	const command = require(`./commands/${file}`);
-	if (command.data && command.execute) {
-		commands.push(command);
-	} else {
-		console.error(`❌ Comando inválido em ${file}, falta data ou execute.`);
+client.on(Events.GuildMemberAdded, async member => {
+	// Verifica se o membro adicionado está na whitelist
+	let role_to_give = await config.get(member.guild.id, 'default_role');
+	if (!role_to_give) return;
+
+	let player_id;
+	let is_whitelisted = false;
+
+	try {
+		const playerId = await getPlayerByDiscordID(member.id);
+		if (playerId) {
+			player_id = playerId;
+			is_whitelisted = await isPlayerWhitelisted(playerId);
+		}
+	} catch (error) {
+		console.error('❌ Erro ao obter ID do jogador:', error);
+	}
+
+	if (is_whitelisted) {
+		let whitelisted_role = await config.get(member.guild.id, 'whitelisted_role');
+		if (whitelisted_role) {
+			role_to_give = whitelisted_role;
+		} else {
+			console.warn(`⚠️ Role de whitelist não configurada para o servidor ${member.guild.id}`);
+			return;
+		}
+	}
+	member.roles.add(role_to_give).catch(err => {
+		console.error(`❌ Erro ao adicionar role ao membro ${member.id} no servidor ${member.guild.id}:`, err);
+	});
+});
+
+console.log('🔃 Preparando interações...');
+try {
+	// Carrega interações de pasta interactions
+	for (const f of fs.readdirSync('./interactions').filter(x => x.endsWith('.js'))) {
+		const mod = await import(`./interactions/${f}`);
+		if (mod.default) {
+			if (mod.default.name && mod.default.execute) client.interactions.set(mod.default.name, mod.default);
+			else if (typeof mod.default === 'object' && mod.default.length > 0) {
+				for (const m of mod.default) {
+					if (m.name && m.execute) client.interactions.set(m.name, m);
+				}
+			}
+		}
+	}
+} catch (e) {
+	console.log('Sem interações carregadas automaticamente.', e.message);
+}
+console.log(`✅ ${client.interactions.size} interações carregadas.`);
+
+// Carrega commands de pasta commands (apenas referência; implementar se quiser carregar dinamicamente)
+console.log('🔃 Preparando comandos...');
+try {
+	for (const f of fs.readdirSync('./commands').filter(x => x.endsWith('.js'))) {
+		const mod = await import(`./commands/${f}`);
+		if (!mod.default) {
+			continue;
+		}
+		if (mod.default.data && mod.default.execute) {
+			client.commands.set(mod.default.data.name, mod.default);
+		}
+		if (mod.default.handleButtons) {
+			for (const [id, func] of Object.entries(mod.default.handleButtons)) {
+				if (func) client.interactions.set(id, { name: id, execute: func });
+			}
+		}
+	}
+} catch (e) {
+	console.log('Sem commands carregados automaticamente.', e.message);
+}
+console.log(`✅ ${client.commands.size} comandos carregados.`);
+
+// Carrega módulos de pasta modules (apenas referência; implementar se quiser carregar dinamicamente)
+console.log('🔃 Preparando módulos...');
+const modules = fs.readdirSync('./modules').filter(file => file.endsWith('.js'));
+for (const file of modules) {
+	const moduleImport = await import(`./modules/${file}`);
+	const mod = moduleImport.default || moduleImport;
+	if (mod.init) {
+		console.log(`🔃 Iniciando módulo ${file}...`);
+		mod.init(client);
 	}
 }
+console.log(`✅ ${modules.length} módulos carregados.`);
 
-client.once('ready', () => {
+// Evento ready
+client.once(Events.ClientReady, () => {
 	console.log(`✅ Bot conectado como ${client.user.tag}`);
 
-	let guilds = client.guilds.cache.map(guild => guild.id);
-	console.log(`✅ Servidores: ${guilds.length} servidores`);
+	console.log('✅ Database inicializada e tabelas garantidas.');
 
-	let clientId = client.user.id;
-	
-	for (const guild of client.guilds.cache) {
-		const data = rest.put(Routes.applicationGuildCommands(clientId, guild[0]), {body: commands.map(command => command.data.toJSON())})
-		.then(() => console.log(`✅ Comandos registrados para ${guild[1].name}`))
-		.catch(console.error);
-	}
+	let guilds = client.guilds.cache.map(guild => guild.id);
+	console.log(`✅ Estou em ${guilds.length} servidores!`);
+
+	console.log(`ℹ️  Processando comandos...`);
+	(async () => {
+		await rest.put(Routes.applicationCommands(client.user.id), { body: client.commands.map(command => command.data.toJSON()) })
+			.then(() => console.log(`✅ Comandos registrados!`))
+			.catch(console.error);
+	})();
+
+	console.log('✅ Bot is ready!');
 
 	client.user.setActivity('Monitores', { type: 'WATCHING' });
-	client.user.setStatus('busy')
+	client.user.setStatus('busy');
 	client.user.setPresence({
 		activities: [{ name: 'Monitores', type: 'WATCHING' }],
 		status: 'dnd',
 	});
-
 });
 
-client.on(Events.InteractionCreate, async (interaction) => {
-	if (!interaction.isCommand()) return;
-	if (!interaction.guild) {
-		return interaction.reply({ content: '❌ Este comando só pode ser usado em servidores.', ephemeral: true });
-	}
-	const command = commands.find(cmd => cmd.data.name === interaction.commandName);
+import handleCloseTicket from './interactions/closeTicket.js';
+import handleOpenTicket from './interactions/openTicket.js';
+import handleTicketTypeSelect from './interactions/ticketDropdown.js';
 
-	if (!command) {
-		console.error(`❌ No command matching ${interaction.commandName} was found.`);
+client.on(Events.InteractionCreate, async interaction => {
+	if (!interaction.guild) {
+		interaction.reply({ content: '❌ Este comando só pode ser usado em servidores.', ephemeral: true });
 		return;
 	}
-
-	if (interaction.isChatInputCommand()) {
-		if (!interaction.guild.members.me.permissions.has('SendMessages')) {
-			return interaction.reply({ content: '❌ Eu não tenho permissão para enviar mensagens neste canal.', ephemeral: true });
+	await interaction.deferReply({ ephemeral: true });
+	interaction.editReply({ content: '🔃 Pensando...', ephemeral: true });
+	if (interaction.isButton()) {
+		const interactionHandler = client.interactions.get(interaction.customId);
+		if (interactionHandler) {
+			try {
+				await interactionHandler.execute(interaction, { client });
+			} catch (error) {
+				console.error(error);
+				await interaction.editReply({ content: '❌ Ocorreu um erro ao executar esta ação!', ephemeral: true });
+			}
+			return;
 		}
-		if (!interaction.guild.members.me.permissions.has('EmbedLinks')) {
-			return interaction.reply({ content: '❌ Eu não tenho permissão para enviar links incorporados neste canal.', ephemeral: true });
+		const id = interaction.customId;
+		if (id === 'close_ticket') {
+			return handleCloseTicket(interaction, { client });
+		} else if (id.startsWith('open_ticket::')) {
+			return handleOpenTicket(interaction, { client });
+		}
+	} else if (interaction.isStringSelectMenu()) {
+		const id = interaction.customId;
+		const interactionHandler = client.interactions.get(id);
+		if (interactionHandler) {
+			await interactionHandler.execute(interaction, { client });
+			return;
+		}
+		if (id === 'ticket_type') {
+			return await handleTicketTypeSelect(interaction, { client });
+		}
+	} else if (interaction.isCommand()) {
+		const command = client.commands.get(interaction.commandName);
+		if (!command) {
+			console.error(`No command matching ${interaction.commandName} was found.`);
+			await interaction.editReply({ content: '❌ Comando não encontrado.', ephemeral: true });
+			return;
 		}
 
 		console.log(`💻 Comando ${interaction.commandName} executado por ${interaction.user.tag} em ${interaction.guild.name}`);
-		await interaction.deferReply({ flags: MessageFlags.Ephemeral })
-			.catch(console.error);
-		if (interaction.user.bot) {
-			return interaction.followUp({ content: '❌ Você não pode usar este comando.', ephemeral: true });
-		}
-
 		try {
-			await command.execute(interaction);
+			return await command.execute(interaction, { client });
 		} catch (error) {
 			console.error(error);
-			if (interaction.replied || interaction.deferred) {
-				await interaction.followUp({ content: '❌ Ocorreu um erro ao executar este comando!', flags: MessageFlags.Ephemeral });
-			} else {
-				await interaction.reply({ content: '❌ Ocorreu um erro ao executar este comando!', flags: MessageFlags.Ephemeral });
-			}
+			return await interaction.editReply({ content: '❌ Ocorreu um erro ao executar este comando!', ephemeral: true });
 		}
+	}
 
-	} else if (interaction.isAutocomplete()) {
-
-		try {
-			await command.autocomplete(interaction);
-		} catch (error) {
-			console.error(error);
-		}
+	// Final fallback for unknown interactions
+	if (!interaction.replied && !interaction.deferred) {
+		await interaction.reply({ content: '❌ Interação desconhecida. Se o problema persistir, contate um administrador.', ephemeral: true });
+	} else {
+		await interaction.editReply({ content: '❌ Interação desconhecida. Se o problema persistir, contate um administrador.', ephemeral: true });
 	}
 
 });

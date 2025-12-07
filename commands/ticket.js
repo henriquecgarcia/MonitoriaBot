@@ -59,7 +59,7 @@ export default {
 			}
 		} else if (subcommand === 'fechar') {
 			const channel = interaction.channel;
-			const ticket = await db.getTicketByChannel(channel.id);
+			const ticket = await db.getTicketByChannel(interaction.guild.id, channel.id);
 			if (!ticket) {
 				return interaction.editReply({ content: '❌ Ticket não encontrado.', ephemeral: true });
 			}

@@ -217,9 +217,9 @@ export async function createTicket({ guild, user, type, client }) {
 
 	// envia mensagem placeholder no canal e pinga staff
 	const pingRoles = (await config.get(guild.id, staff_role)) || [];
-	let pingText = pingRoles.length ? `<@&${pingRoles[0]}>` : '';
-	pingText += `\nOlá <@${user.id}>, agradecemos por ter aberto um ticket, aguarde um momento que a equipe de staff irá atendê-lo em breve.\n\n\n* Caso demore, envie mais mensagens para subir o ticket na fila.\n* Tickets devem ser usados apenas para assuntos relacionados ao servidor e jogo.\n* Uso indevido pode levar a punições.`;
-	const placeholder = `Este canal é um ticket do tipo **${ticket_type.name}** aberto por <@${user.id}>.\nAguarde a equipe de staff atender seu ticket.\n\n**Não feche este canal, a equipe de staff irá fechá-lo quando o atendimento for concluído.**\n\n*Tipo de Ticket: ${ticket_type.description}*`;
+	let pingText = pingRoles.length ? `<@&${pingRoles}>` : '';
+	pingText += `\nOlá <@${user.id}>, agradecemos por ter aberto um ticket, aguarde um momento que a equipe de monitores irá atendê-lo em breve.\n\n\n* Caso demore, envie mais mensagens para subir o ticket na fila.\n* Tickets devem ser usados apenas para assuntos relacionados á UNIFESP e dúvidas de programação.`;
+	const placeholder = `Este canal é um ticket do tipo **${ticket_type.name}** aberto por <@${user.id}>.\nAguarde a equipe de monitores atender seu ticket.\n\n**Não feche este canal, a equipe de monitores irá fechá-lo quando Sua dúvida for resolvida.**\n\n*Tipo de Ticket: ${ticket_type.description}*`;
 
 	const row = new ActionRowBuilder()
 		.addComponents(

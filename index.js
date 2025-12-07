@@ -144,6 +144,12 @@ client.once(Events.ClientReady, async () => {
 		activities: [{ name: 'Monitores', type: 'WATCHING' }],
 		status: 'dnd',
 	});
+
+	client.user.setAvatar("./assets/Logo.png").then(() => {
+		console.log('✅ Avatar definido com sucesso!');
+	}).catch(err => {
+		console.error('❌ Erro ao definir avatar:', err);
+	});
 });
 
 import handleCloseTicket from './interactions/closeTicket.js';

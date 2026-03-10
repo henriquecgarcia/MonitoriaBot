@@ -91,8 +91,11 @@ async function closeTicket(channelId, closedBy) {
 	await pool.execute('UPDATE tickets SET status = "closed", closed_at = CURRENT_TIMESTAMP, closed_by = ? WHERE channel_id = ?', [closedBy, channelId]);
 }
 async function getTicketByChannel(guildId, channelId) {
+	if (typeof guildId === 'undefined' || typeof channelId === 'undefined') {
+		throw new Error('Parâmetros inválidos: guildId e channelId não podem ser undefined.');
+	}
+
 	const pool = await initDB();
-	// console.log(guildId, channelId);
 	const [rows] = await pool.execute('SELECT * FROM tickets WHERE guild_id = ? AND channel_id = ? LIMIT 1', [guildId, channelId]);
 	return rows.length ? rows[0] : null;
 }

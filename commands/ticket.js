@@ -143,7 +143,8 @@ export default {
 						.addOptions(options)
 				);
 			await interaction.editReply({ content: '✅ Mensagem de ticket padrão:', embeds: [embed], components: [actions], ephemeral: true });
-			interaction.channel.send({ content: '🔧 Um novo ticket foi criado. Por favor, selecione o tipo de ticket desejado no menu abaixo:', embeds: [embed], components: [actions] });
+			const msg = '# 🔧 Sistema de tickets.\n\n Bem vindo(a) ao sistema de Tickets, para abrir um novo ticket, por favor, selecione o tipo de ticket desejado no menu abaixo:';
+			interaction.channel.send({ content: msg, embeds: [embed], components: [actions] });
 		} else {
 			return interaction.editReply({ content: '❌ Subcomando desconhecido.', ephemeral: true });
 		}

@@ -33,14 +33,14 @@ var ticketTypes = {
 		logChannelConfig: 'log_ticket_aed2',
 		categoryConfig: 'ticket_aed2_category'
 	},
-	'poo': {
-		name: 'POO',
-		description: 'Dúvidas relacionadas à disciplina de programação orientada a objeto.',
-		color: 0x00AE86,
-		roleIdConfig: 'ticket_role_poo',
-		logChannelConfig: 'log_ticket_poo',
-		categoryConfig: 'ticket_poo_category'
-	},
+	// 'poo': {
+	// 	name: 'POO',
+	// 	description: 'Dúvidas relacionadas à disciplina de programação orientada a objeto.',
+	// 	color: 0x00AE86,
+	// 	roleIdConfig: 'ticket_role_poo',
+	// 	logChannelConfig: 'log_ticket_poo',
+	// 	categoryConfig: 'ticket_poo_category'
+	// },
 	'geral': {
 		name: 'Geral',
 		description: 'Dúvidas gerais sobre o servidor de discord.',
@@ -202,12 +202,8 @@ export async function createTicket({ guild, user, type, client }) {
 
 	// adiciona permissões para staff roles configurados
 	const staffCsv = (await config.get(guild.id, staff_role)) || [];
-	if (staffCsv && staffCsv.length) {
-		for (const rid of staffCsv) {
-			try {
-				await channel.permissionOverwrites.edit(rid, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true });
-			} catch(e) {}
-		}
+	if (staffCsv) {
+		channel.permissionOverwrites.edit(staffCsv, { ViewChannel: true, SendMessages: true, ReadMessageHistory: true });
 	}
 
 	console.log(`Canal de ticket criado: ${channel.name} (${channel.id}) - Staff roles: ${staffCsv || 'nenhum'} - ou ${staff_role}`);

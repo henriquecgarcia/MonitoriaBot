@@ -60,7 +60,8 @@ function formatPermName(perm: string): string {
 
 function escapeTicks(str: string | null | undefined): string {
 	if (!str) return '*vazia*';
-	return str.replace(/`/g, '\\`');
+	// Escape backslashes first, then backticks, to avoid double-escaping
+	return str.replace(/\\/g, '\\\\').replace(/`/g, '\\`');
 }
 
 // ────────────────────────────────────────────────────────────────────────────────

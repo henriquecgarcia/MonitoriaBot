@@ -27,6 +27,7 @@ const command: BotCommand = {
 		try {
 			const deleted = await channel.bulkDelete(messages);
 			await interaction.editReply({ content: `✅ ${deleted.size} mensagens apagadas.` });
+			return await channel.send({ content: `✅ <@${member.id}> apagou ${deleted.size} mensagens.` });
 		} catch {
 			await interaction.editReply({ content: '❌ Não foi possível apagar as mensagens. Elas podem ter mais de 14 dias.' });
 		}

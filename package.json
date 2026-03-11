@@ -1,11 +1,12 @@
 {
   "name": "monitoriabot",
   "description": "Bot Discord para monitoria de matérias de programação da UNIFESP SJC",
-  "version": "1.0.1",
-  "main": "index.js",
+  "version": "2.0.0",
+  "module": "src/index.ts",
   "scripts": {
-    "start": "node index.js",
-    "dev": "nodemon index.js"
+    "start": "bun run src/index.ts",
+    "dev": "bun --watch src/index.ts",
+    "typecheck": "bunx tsc --noEmit"
   },
   "type": "module",
   "dependencies": {
@@ -13,11 +14,11 @@
     "discord-html-transcripts": "^3.2.0",
     "discord.js": "^14.19.3",
     "dotenv": "^16.5.0",
-    "mysql2": "^3.15.3",
-    "pm2": "^6.0.13"
+    "mysql2": "^3.15.3"
   },
   "devDependencies": {
-    "nodemon": "2.0.22"
+    "@types/node": "^20.19.37",
+    "typescript": "^5.9.3"
   },
   "keywords": [],
   "author": "",

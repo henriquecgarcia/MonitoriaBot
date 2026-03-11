@@ -170,7 +170,8 @@ export function init(client: Client): void {
 		);
 	});
 
-	client.on('guildBanRemove', (ban) => {
+	client.on('guildBanRemove', async (ban) => {
+		const moderador = await fetchModerator(ban.guild, AuditLogEvent.MemberBanRemove, ban.user.id);
 		safeSend(
 			client,
 			ban.guild.id,
@@ -178,17 +179,22 @@ export function init(client: Client): void {
 			new EmbedBuilder()
 				.setTitle('♻️ Usuário Desbanido')
 				.setDescription(`👤 ${ban.user.tag} (${ban.user.id}) foi desbanido.`)
+				.addFields(
+					{ name: 'Usuário', value: `${ban.user.tag} <@${ban.user.id}>`, inline: true },
+					{ name: 'Moderador', value: moderador, inline: true },
+				)
 				.setThumbnail(ban.user.displayAvatarURL())
 				.setColor('Orange')
 				.setFooter({ text: `ID: ${ban.user.id}` }),
 		);
 	});
 
-	client.on('guildMemberUpdate', (oldMember, newMember) => {
+	client.on('guildMemberUpdate', async (oldMember, newMember) => {
 		const addedRoles = newMember.roles.cache.filter((r) => !oldMember.roles.cache.has(r.id));
 		const removedRoles = oldMember.roles.cache.filter((r) => !newMember.roles.cache.has(r.id));
 
 		if (addedRoles.size || removedRoles.size) {
+			const moderador = await fetchModerator(newMember.guild, AuditLogEvent.MemberRoleUpdate, newMember.id);
 			const changes: string[] = [];
 			addedRoles.forEach((r) => changes.push(`✅ Cargo adicionado: ${r}`));
 			removedRoles.forEach((r) => changes.push(`❌ Cargo removido: ${r}`));
@@ -200,7 +206,10 @@ export function init(client: Client): void {
 				new EmbedBuilder()
 					.setTitle('👤 Atualização de Membro')
 					.setDescription(`<@${newMember.id}> (${newMember.user.tag})`)
-					.addFields({ name: 'Mudanças de Cargos', value: changes.join('\n') })
+					.addFields(
+						{ name: 'Mudanças de Cargos', value: changes.join('\n') },
+						{ name: 'Responsável', value: moderador }
+					)
 					.setThumbnail(newMember.user.displayAvatarURL())
 					.setColor('Blue')
 					.setFooter({ text: `ID: ${newMember.id}` }),
@@ -208,6 +217,7 @@ export function init(client: Client): void {
 		}
 
 		if (oldMember.nickname !== newMember.nickname) {
+			const moderador = await fetchModerator(newMember.guild, AuditLogEvent.MemberUpdate, newMember.id);
 			safeSend(
 				client,
 				newMember.guild.id,
@@ -218,6 +228,7 @@ export function init(client: Client): void {
 					.addFields(
 						{ name: 'Apelido antigo', value: oldMember.nickname ?? oldMember.user.username, inline: true },
 						{ name: 'Apelido novo', value: newMember.nickname ?? newMember.user.username, inline: true },
+						{ name: 'Responsável', value: moderador },
 					)
 					.setThumbnail(newMember.user.displayAvatarURL())
 					.setColor('Blue')

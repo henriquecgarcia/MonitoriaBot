@@ -11,6 +11,7 @@ import handleCloseTicket from './interactions/closeTicket.js';
 import handleOpenTicket from './interactions/openTicket.js';
 import handleTicketTypeSelect from './interactions/ticketDropdown.js';
 import type { BotClient, BotCommand, BotInteraction, CommandContext } from './types/index.js';
+import { MessageFlags } from 'discord.js';
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Validate token early
@@ -179,7 +180,7 @@ client.once(Events.ClientReady, async () => {
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (!interaction.guild) {
 		if (interaction.isRepliable()) {
-			await interaction.reply({ content: '❌ Este comando só pode ser usado em servidores.', ephemeral: true });
+			await interaction.reply({ content: '❌ Este comando só pode ser usado em servidores.', flags: MessageFlags.Ephemeral });
 		}
 		return;
 	}
@@ -197,11 +198,11 @@ client.on(Events.InteractionCreate, async (interaction) => {
 				await handler.execute(interaction, ctx);
 			} catch (err) {
 				logger.error('INTERACTION', `Button handler "${id}" threw:`, err);
-				const msg = { content: '❌ Ocorreu um erro ao executar esta ação.', ephemeral: true };
+				const content = '❌ Ocorreu um erro ao executar esta ação.';
 				if (interaction.replied || interaction.deferred) {
-					await interaction.editReply(msg).catch(() => null);
+					await interaction.editReply({content}).catch(() => null);
 				} else {
-					await interaction.reply(msg).catch(() => null);
+					await interaction.reply({content, flags: MessageFlags.Ephemeral}).catch(() => null);
 				}
 			}
 			return;
@@ -216,7 +217,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 	// ── Select menu interactions ─────────────────────────────────────────────────
 	if (interaction.isStringSelectMenu()) {
-		await interaction.deferReply({ ephemeral: true });
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const id = interaction.customId;
 		const handler = client.interactions.get(id);
@@ -236,7 +237,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 	// ── Slash commands ───────────────────────────────────────────────────────────
 	if (interaction.isCommand()) {
-		await interaction.deferReply({ ephemeral: true });
+		await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
 		const command = client.commands.get(interaction.commandName);
 		if (!command) {

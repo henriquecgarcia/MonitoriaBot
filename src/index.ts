@@ -34,6 +34,9 @@ const client = new Client({
 		GatewayIntentBits.GuildMessageTyping,
 		GatewayIntentBits.GuildMembers,
 		GatewayIntentBits.GuildPresences,
+		GatewayIntentBits.DirectMessages,
+		GatewayIntentBits.DirectMessageTyping,
+		GatewayIntentBits.DirectMessageReactions,
 	],
 	allowedMentions: { parse: ['users', 'roles'], repliedUser: false },
 }) as BotClient;

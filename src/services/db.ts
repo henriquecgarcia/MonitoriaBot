@@ -1,6 +1,7 @@
 import mysql from 'mysql2/promise';
 import type { Pool } from 'mysql2/promise';
 import type { TicketRow, TicketStatus } from '../types/index.js';
+import { logger } from './logger.js';
 
 // ────────────────────────────────────────────────────────────────────────────────
 // Pool factory
@@ -77,7 +78,8 @@ async function createTables(): Promise<void> {
 			UNIQUE KEY uq_guild_key (guild_id, config_key)
 		)
 	`);
-	console.log('✅ Tabela configs verificada.');
+
+	logger.info('DB_CREATETABLES', 'Tabela configs verificada/criada.');
 
 	await pool.execute(`
 		CREATE TABLE IF NOT EXISTS tickets (
@@ -95,7 +97,8 @@ async function createTables(): Promise<void> {
 			INDEX idx_guild_status (guild_id, status)
 		)
 	`);
-	console.log('✅ Tabela tickets verificada.');
+
+	logger.info('DB_CREATETABLES', 'Tabela tickets verificada/criada.');
 }
 
 // ────────────────────────────────────────────────────────────────────────────────

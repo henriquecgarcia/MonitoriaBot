@@ -363,6 +363,26 @@ export async function closeTicket({ channel, closedBy, client, opts = {} }: Clos
 		files: transcript ? [transcript] : [],
 	});
 
+	const creatorId = ticketData.author_id;
+	if (creatorId) {
+		// Notify the creator about the ticket closure
+		const creator = await guild.members.fetch(creatorId).catch(() => null);
+		if (creator) {
+			await creator.createDM().then((dm) => {
+				dm.send({
+					content: `Seu ticket ${ticketData.ticket_type}#${ticketData.ticket_id} foi fechado por ${closedBy.tag}.`,
+					files: transcript ? [transcript] : []
+				}).then(() => {
+					logger.info('TICKET_CLOSE', `Notificação enviada para o criador do ticket ${creator.user.tag} (${creator.id})`);
+				}).catch(err => {
+					logger.warn('TICKET_CLOSE', `Falha ao enviar notificação para o criador do ticket ${creator.user.tag} (${creator.id}):`, err);
+				});
+			}).catch(err => {
+				logger.warn('TICKET_CLOSE', `Falha ao criar DM para o criador do ticket ${creator.user.tag} (${creator.id}):`, err);
+			});
+		}
+	}
+
 	// Persist closed status
 	await db.closeTicket(channel.id, closedBy.id);
 

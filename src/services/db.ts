@@ -23,6 +23,8 @@ function createPool(cfg: PoolConfig): Pool {
 		user: cfg.user,
 		password: cfg.password,
 		database: cfg.database,
+		supportBigNumbers: true,
+		bigNumberStrings: true,
 		waitForConnections: true,
 		connectionLimit: 10,
 		queueLimit: 0,

@@ -364,21 +364,24 @@ export async function closeTicket({ channel, closedBy, client, opts = {} }: Clos
 	});
 
 	const creatorId = ticketData.author_id;
-	if (creatorId) {
-		// Notify the creator about the ticket closure
-		const creator = await guild.members.fetch(creatorId).catch(() => null);
-		if (creator) {
-			await creator.createDM().then((dm) => {
-				dm.send({
+	if (creatorId) {// Notify the creator about the ticket closure via private message
+		const creatorMember = await guild.members.fetch(creatorId).catch(() => null);
+		const creatorUser = creatorMember?.user ?? (await client.users.fetch(creatorId).catch(() => null));
+
+		if (!creatorUser) {
+			logger.warn('TICKET_CLOSE', `Não foi possível encontrar o autor do ticket para enviar DM (userId: ${creatorId})`);
+		} else {
+			await creatorUser.createDM().then((dmChannel) => {
+				return dmChannel.send({
 					content: `Seu ticket ${ticketData.ticket_type}#${ticketData.ticket_id} foi fechado por ${closedBy.tag}.`,
 					files: transcript ? [transcript] : []
 				}).then(() => {
-					logger.info('TICKET_CLOSE', `Notificação enviada para o criador do ticket ${creator.user.tag} (${creator.id})`);
+					logger.info('TICKET_CLOSE', `Notificação enviada para o criador do ticket ${creatorUser.tag} (${creatorUser.id})`);
 				}).catch(err => {
-					logger.warn('TICKET_CLOSE', `Falha ao enviar notificação para o criador do ticket ${creator.user.tag} (${creator.id}):`, err);
+					logger.error('TICKET_CLOSE', `Falha ao enviar notificação para o criador do ticket ${creatorUser.tag} (${creatorUser.id}):`, err);
 				});
 			}).catch(err => {
-				logger.warn('TICKET_CLOSE', `Falha ao criar DM para o criador do ticket ${creator.user.tag} (${creator.id}):`, err);
+				logger.error('TICKET_CLOSE', `Falha ao criar DM para o criador do ticket ${creatorUser.tag} (${creatorUser.id}):`, err);
 			});
 		}
 	}

@@ -19,8 +19,8 @@ async function createBackup(interaction: ChatInputCommandInteraction): Promise<v
 	const filepath = join(BACKUP_DIR, filename);
 
 	const [configsData, ticketsData] = await Promise.all([
-		db.query('SELECT * FROM configs', []),
-		db.query('SELECT * FROM tickets', []),
+		db.query('SELECT * FROM configs WHERE guild_id = ?', [interaction.guildId]),
+		db.query('SELECT * FROM tickets WHERE guild_id = ?', [interaction.guildId]),
 	]);
 
 	const backupData = { timestamp: new Date().toISOString(), tables: { configs: configsData, tickets: ticketsData } };
@@ -39,8 +39,8 @@ async function restoreBackup(interaction: ChatInputCommandInteraction, fileConte
 		throw new Error('Formato de backup inválido');
 	}
 
-	await db.query('DELETE FROM configs', []);
-	await db.query('DELETE FROM tickets', []);
+	await db.query('DELETE FROM configs WHERE guild_id = ?', [interaction.guildId]);
+	await db.query('DELETE FROM tickets WHERE guild_id = ?', [interaction.guildId]);
 
 	for (const cfg of backupData.tables.configs as Record<string, unknown>[]) {
 		await db.query(

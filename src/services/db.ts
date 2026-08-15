@@ -109,7 +109,7 @@ async function createTables(): Promise<void> {
 
 async function query<T = unknown>(sql: string, params: unknown[] = []): Promise<T[]> {
 	const pool = await initDB();
-	const [rows] = await pool.execute(sql, params);
+	const [rows] = await pool.execute(sql, params as mysql.ExecuteValues[]);
 	return rows as T[];
 }
 

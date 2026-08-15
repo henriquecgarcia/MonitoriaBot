@@ -2,7 +2,8 @@ FROM alpine:3.20
 
 RUN apk add --no-cache nodejs npm
 
-RUN npm install -g npm@latest
+COPY . .
+
 RUN npm install
 
-RUN npm run build
+CMD ["npm","start"]

@@ -1,0 +1,9 @@
+services:
+  monitoria-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: monitoria-bot
+    restart: unless-stopped
+    env_file:
+      - .env

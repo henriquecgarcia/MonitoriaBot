@@ -1,6 +1,6 @@
-import config from "@/services/config_handler";
+import config from '../services/config_handler.js';
 import { Events, Client, Message } from "discord.js";
-import { logger } from "@/services/logger";
+import { logger } from '../services/logger.js';
 
 const ollamaURL = process.env.OLLAMA_URL || 'http://localhost:11434';
 const defaultModel = process.env.OLLAMA_MODEL || 'qwen3-vl:8b';

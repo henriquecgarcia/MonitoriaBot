@@ -3,17 +3,14 @@
     "target": "ESNext",
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "rootDir": "src",
+    "outDir": "dist",
     "customConditions": ["node"],
     "strict": true,
     "skipLibCheck": true,
     "types": ["node"],
-    "noEmit": true,
     "esModuleInterop": true,
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "resolveJsonModule": true
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules"]

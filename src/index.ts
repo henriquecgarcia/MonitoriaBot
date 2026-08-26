@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { Client, Collection, Events, GatewayIntentBits, Routes } from 'discord.js';
 import { REST } from 'discord.js';
 import { readdir } from 'node:fs/promises';

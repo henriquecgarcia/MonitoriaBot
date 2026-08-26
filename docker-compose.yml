@@ -3,9 +3,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+
     container_name: monitoria-bot
+
     restart: unless-stopped
+
     env_file:
       - .env
+
     extra_hosts:
       - "host.docker.internal:host-gateway"
+
+    init: true
+
+    stop_grace_period: 15s

@@ -9,9 +9,9 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev \
     && npm cache clean --force
 
-COPY dist ./dist
+COPY src ./src
 COPY assets ./assets
 
 USER node
 
-CMD ["node", "dist/index.js"]
+CMD ["node", "src/index.js"]

@@ -1,4 +1,25 @@
 services:
+  mariadb:
+    image: mariadb:11
+    container_name: monitoria-db
+    restart: unless-stopped
+
+    environment:
+      MARIADB_DATABASE: ${BOT_DB_NAME}
+      MARIADB_USER: ${BOT_DB_USER}
+      MARIADB_PASSWORD: ${BOT_DB_PASS}
+      MARIADB_RANDOM_ROOT_PASSWORD: "yes"
+
+    volumes:
+      - monitoria-db-data:/var/lib/mysql
+
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
   monitoria-bot:
     build:
       context: .
@@ -10,6 +31,10 @@ services:
 
     env_file:
       - .env
+
+    depends_on:
+      mariadb:
+        condition: service_healthy
 
     healthcheck:
       test: ["CMD", "node", "src/healthcheck.js"]
@@ -24,3 +49,6 @@ services:
     init: true
 
     stop_grace_period: 15s
+
+volumes:
+  monitoria-db-data:

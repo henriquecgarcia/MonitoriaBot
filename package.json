@@ -5,15 +5,21 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "node --watch src/index.js"
+    "dev": "node --watch src/index.js",
+    "healthcheck": "node src/healthcheck.js"
   },
   "type": "module",
   "dependencies": {
     "axios": "^1.19.0",
-    "discord-html-transcripts": "^3.2.0",
+    "discord-html-transcripts": "3.2.0",
     "discord.js": "^14.27.0",
     "dotenv": "^17.4.2",
     "mysql2": "^3.23.3"
+  },
+  "overrides": {
+    "discord-html-transcripts": {
+      "undici": "6.28.0"
+    }
   },
   "keywords": [],
   "author": "",

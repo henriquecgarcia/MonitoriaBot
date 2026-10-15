@@ -27,6 +27,12 @@ services:
 
     container_name: monitoria-bot
 
+    # The host's resolver (AdGuard on 192.168.15.6) is unreachable from bridge
+    # networks; without DNS the bot cannot reach the Discord gateway.
+    dns:
+      - 192.168.15.1
+      - 1.1.1.1
+
     restart: unless-stopped
 
     env_file:
